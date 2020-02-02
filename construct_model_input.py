@@ -3,11 +3,12 @@ from math import log
 from torch.utils.data import Dataset
 import config
 from data_reader import DenovoDataset
+from Converters.parsers import _match_AA_novor
 
 
 class TrainDataset(Dataset):
-    def __init__(self, feature_filename, spectrum_filename, sequence_filename):
-        self.denovo_dataset = DenovoDataset(feature_filename, spectrum_filename, sequence_filename)
+    def __init__(self, feature_filename, spectrum_filename):
+        self.denovo_dataset = DenovoDataset(feature_filename, spectrum_filename)
 
     def __getitem__(self, item):
         input = self.construct_input(self.denovo_dataset[item])
@@ -39,37 +40,7 @@ class TrainDataset(Dataset):
             amino_acid.append(arr)
         amino_acid = np.array(amino_acid).T
         amino_acid = amino_acid.tolist()
-
-        protein = {
-            "length": len(denovo_seq),
-            "denovo seq": denovo_seq,
-            'a1': [d_array['a1'], i_array['a1']], 'a2': [d_array['a2'], i_array['a2']],
-            'a3': [d_array['a3'], i_array['a3']],
-            'b1': [d_array['b1'], i_array['b1']], 'b2': [d_array['b2'], i_array['b2']],
-            'b3': [d_array['b3'], i_array['b3']],
-            'c1': [d_array['c1'], i_array['c1']], 'c2': [d_array['c2'], i_array['c2']],
-            'c3': [d_array['c3'], i_array['c3']],
-            'x1': [d_array['x1'], i_array['x1']], 'x2': [d_array['x2'], i_array['x2']],
-            'x3': [d_array['x3'], i_array['x3']],
-            'y1': [d_array['y1'], i_array['y1']], 'y2': [d_array['y2'], i_array['y2']],
-            'y3': [d_array['y3'], i_array['y3']],
-            'z1': [d_array['z1'], i_array['z1']], 'z2': [d_array['z2'], i_array['z2']],
-            'z3': [d_array['z3'], i_array['z3']],
-            "charges": charges,
-            "position": position,
-            "amino_acid": amino_acid,
-            "result": [0] * len(denovo_seq)
-        }
-        input_data = np.array(
-            [protein['a1'], protein['a2'], protein['a3'], protein['x1'], protein['x2'], protein['x3'],
-             protein['b1'], protein['b2'], protein['b3'], protein['y1'], protein['y2'], protein['y3'],
-             protein['c1'], protein['c2'], protein['c3'], protein['z1'], protein['z2'], protein['z3'], ],
-            dtype='float32')
-        input_data = np.append(input_data, charges)
-        input_data = np.append(input_data, position)
-        input_data = np.append(input_data, amino_acid)
-        input_data = input_data.reshape(1, 64, -1)
-
+        input_data = np.array([list(d_array.values()) + list(i_array.values())+charges+position+amino_acid])
         return input_data
 
     def find_peaks(self, feature: config.DenovoData, seq):
@@ -140,43 +111,9 @@ class TrainDataset(Dataset):
                 re_intensity_array[ion_name] = re_intensity_array[ion_name][::-1]
         return re_distance_array, re_intensity_array
 
-    def compare_aa(self, a1, a2):
-        if (a1 == 'I'): a1 = 'L'
-        if (a2 == 'I'): a2 = 'L'
-
-
-    def compare_sequence(self, s1, s2):
-        p1, p2 = 0, 0
-        result = []
-        mass_tol = 0.98
-
-        while (p1 < len(s1) and p2 < len(s2)):
-            m1 = config.mass_AA[s1[p1]]
-            m2 = config.mass_AA[s2[p2]]
-            t1 = p1
-            t2 = p2
-            while (m1 / m2 < mass_tol or m2 / m1 < mass_tol):
-                if (m1 < m2):
-                    t1 += 1
-                    if (t1 == len(s1)): break
-                    m1 += config.mass_AA[s1[t1]]
-                elif (m1 > m2):
-                    t2 += 1
-                    if (t2 == len(s2)): break
-                    m2 += config.mass_AA[s2[t2]]
-            sub1 = s1[p1:t1 + 1]
-            sub2 = s2[p2:t2 + 1]
-            if (sub1 == sub2):
-                result.append(1)
-            else:
-                result += [0] * len(sub1)
-            p1 = t1 + 1
-            p2 = t2 + 1
-        return result
 
     def construct_output(self, feature: config.DenovoData):
-        denovo_seq = feature.original_dda_feature.predicted_seq
         target_seq = feature.original_dda_feature.peptide
-        result = self.compare_sequence(denovo_seq, target_seq)
-        result = np.array(result, dtype='float64')
-        return result
+        denovo_seq = feature.original_dda_feature.predicted_seq
+        _, result = _match_AA_novor(target_seq, denovo_seq)
+        return np.array(result, dtype='float64')

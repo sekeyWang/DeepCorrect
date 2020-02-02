@@ -1,15 +1,16 @@
 import config
 from construct_model_input import TrainDataset
-from model import Net
-from train_model import train
+from train_model import train, build_model
 import logging.config
 logger = logging.getLogger(__name__)
 
 
 def main():
-    dataset = TrainDataset(config.input_feature_file_train, config.input_spectrum_file_train, config.Deepnovo_result_filename)
-    model = Net()
-    train(dataset, model)
+    train_dataset = TrainDataset(config.input_feature_file_train, config.input_spectrum_file_train)
+    val_dataset = TrainDataset(config.input_feature_file_val, config.input_spectrum_file_train)
+    model = train(train_dataset=val_dataset, val_dataset=val_dataset, model=build_model())
+#    test(dataset, model)
+#    test(dataset, build_model('model/0:19'))
 
 
 if __name__ == '__main__':
