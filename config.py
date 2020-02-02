@@ -1,9 +1,12 @@
 from dataclasses import dataclass
 
-input_spectrum_file_train = "Hela/spectrums.mgf"
-#input_spectrum_file_train = "cross.9high_80k.exclude_bacillus/S01.mgf"
-input_feature_file_train = "Hela/features.csv.identified.test.nodup"
-Deepnovo_result_filename = 'Hela/features.csv.identified.test.nodup.deepnovo_denovo'
+#input_spectrum_file_train = "Hela/spectrums.mgf"
+#input_feature_file_train = "Hela/features.csv.identified.test.nodup"
+#Deepnovo_result_filename = 'Hela/features.csv.identified.test.nodup.deepnovo_denovo'
+input_spectrum_file_train = "Converters/test_file/spectrum.mgf"
+input_feature_file_train = "Converters/test_file/novor_data.csv"
+input_feature_file_val = "Converters/test_file/deepnovo_data.csv"
+
 
 mass_H = 1.0078
 mass_H2O = 18.0106
@@ -74,6 +77,7 @@ col_rt_mean = "rt_mean"
 col_raw_sequence = "seq"
 col_scan_list = "scans"
 col_feature_area = "feature area"
+col_predicted_seq = "predicted_seq"
 
 MZ_MAX = 3000.0
 MAX_LEN = 50 #if args.search_denovo else 30
@@ -101,3 +105,32 @@ class DenovoData:
     original_dda_feature: DDAFeature
     mz_list: list
     intensity_list: list
+
+vocab_reverse = ['A',
+                 'R',
+                 'N',
+                 'N(Deamidation)',
+                 'D',
+                 #~ 'C',
+                 'C(Carbamidomethylation)',
+                 'E',
+                 'Q',
+                 'Q(Deamidation)',
+                 'G',
+                 'H',
+                 'I',
+                 'L',
+                 'K',
+                 'M',
+                 'M(Oxidation)',
+                 'F',
+                 'P',
+                 'S',
+                 'T',
+                 'W',
+                 'Y',
+                 'V',
+                ]
+vocab = dict([(x, y) for (y, x) in enumerate(vocab_reverse)])
+vocab_size = len(vocab_reverse)
+mass_ID = [mass_AA[vocab_reverse[x]] for x in range(vocab_size)]
