@@ -1,0 +1,40 @@
+import matplotlib.pyplot as plt
+
+def draw_single(x, y, title, xlabel, ylabel, curve1name):
+    plt.title(title)
+    plt.plot(x, y, label = curve1name)
+    fig2, ax2 = plt.subplots()
+    ax2.fill_between(x, 0, y)
+#    plt.plot(x, y2, label = curve2name)
+#    plt.hlines(0.9, 0, 100, label = '0.9')
+#    plt.xlim(0, 1.05)
+#    plt.ylim(0.6, 1)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.legend()
+    plt.show()
+
+def draw_double(x, y1, y2, title, xlabel, ylabel, curve1name, curve2name):
+    plt.title(title)
+    plt.plot(x, y1, label = curve1name)
+    plt.plot(x, y2, label = curve2name)
+#    plt.hlines(0.9, 0, 100, label = '0.9')
+#    plt.xlim(0, 1.05)
+#    plt.ylim(0.6, 1)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.legend()
+    plt.show()
+
+def draw_triple(x, y1, y2, y3, title, xlabel, ylabel, curve1name, curve2name, curve3name):
+    plt.title(title)
+    plt.plot(x, y1, label = curve1name)
+    plt.plot(x, y2, label = curve2name)
+    plt.plot(x, y3, label = curve3name)
+#    plt.hlines(0.9, 0, 100, label = '0.9')
+#    plt.xlim(0, 1.05)
+#    plt.ylim(0.6, 1)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.legend()
+    plt.show()

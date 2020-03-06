@@ -3,10 +3,13 @@ from dataclasses import dataclass
 #input_spectrum_file_train = "Hela/spectrums.mgf"
 #input_feature_file_train = "Hela/features.csv.identified.test.nodup"
 #Deepnovo_result_filename = 'Hela/features.csv.identified.test.nodup.deepnovo_denovo'
-input_spectrum_file_train = "Converters/test_file/spectrum.mgf"
-input_feature_file_train = "Converters/test_file/novor_data.csv"
-input_feature_file_val = "Converters/test_file/deepnovo_data.csv"
+input_spectrum_file_train = "Converters/feature_files/spectrum.mgf"
 
+input_feature_file_train = "Converters/training_features/train.csv"
+input_feature_file_val = "Converters/training_features/valid.csv"
+input_feature_file_test = "Converters/training_features/test.csv"
+
+output_file_test = "Converters/training_features/test_score.csv"
 
 mass_H = 1.0078
 mass_H2O = 18.0106
@@ -48,20 +51,20 @@ amino_acid_number = {
         'A': 0,
         'R': 1,
         'N': 2,
-        'N(Deamidation)':2,
+        'N(Deamidation)':20,
         'D': 3,
         'C': 4,
-        'C(Carbamidomethylation)':4,
+        'C(Carbamidomethylation)':21,
         'E': 5,
         'Q': 6,
-        'Q(Deamidation)': 6,
+        'Q(Deamidation)': 22,
         'G': 7,
         'H': 8,
         'I': 9,
         'L': 10,
         'K': 11,
         'M': 12,
-        'M(Oxidation)':12,
+        'M(Oxidation)':23,
         'F': 13,
         'P': 14,
         'S': 15,
@@ -77,14 +80,14 @@ col_rt_mean = "rt_mean"
 col_raw_sequence = "seq"
 col_scan_list = "scans"
 col_feature_area = "feature area"
-col_predicted_seq = "predicted_seq"
+col_predicted_seq = "novor_seq"
 
 MZ_MAX = 3000.0
 MAX_LEN = 50 #if args.search_denovo else 30
 
-train_epochs = 5
+train_epochs = 12
 splits = 5
-lr = 0.001
+lr = 0.005
 momentum = 0.9
 
 @dataclass
@@ -96,7 +99,7 @@ class DDAFeature:
     peptide: list
     scan: str
     mass: float
-    feature_area: str
+#    feature_area: str
     predicted_seq: list
 
 
@@ -134,3 +137,8 @@ vocab_reverse = ['A',
 vocab = dict([(x, y) for (y, x) in enumerate(vocab_reverse)])
 vocab_size = len(vocab_reverse)
 mass_ID = [mass_AA[vocab_reverse[x]] for x in range(vocab_size)]
+
+ppm = 30
+mass_tol = 300
+search_iterations = 10
+step_size = 0.1

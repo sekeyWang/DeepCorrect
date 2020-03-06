@@ -4,10 +4,11 @@ import re
 import logging
 import config
 import csv
+from LocalSearch import Findsub, calculate_mass
 logger = logging.getLogger(__name__)
 
 class DenovoDataset():
-    def __init__(self, feature_filename, spectrum_filename, transform=None):
+    def __init__(self, feature_filename, spectrum_filename, random_sequence = False):
         """
         read all feature information and store in memory,
         :param feature_filename:
@@ -19,7 +20,7 @@ class DenovoDataset():
         self.input_spectrum_handle = None
         self.feature_list = []
         self.spectrum_location_dict = {}
-        self.transform = transform
+        self.dc = Findsub()
 #        sequence_list = read_deepnovo_result(sequence_filename)
         # read spectrum location file
         spectrum_location_file = spectrum_filename + '.location.pytorch.pkl'
@@ -39,7 +40,7 @@ class DenovoDataset():
                         spectrum_location = current_location
                     elif "SCANS=" in line:
                         scan = re.split('[=\r\n]', line)[1]
-                        print(scan, current_location)
+#                        print(scan, current_location)
                         spectrum_location_dict[scan] = spectrum_location
             self.spectrum_location_dict = spectrum_location_dict
             with open(spectrum_location_file, 'wb') as fw:
@@ -58,8 +59,8 @@ class DenovoDataset():
             z_index = header.index(config.col_precursor_charge)
             rt_mean_index = header.index(config.col_rt_mean)
             seq_index = header.index(config.col_raw_sequence)
-            scan_index = header.index(config.col_scan_list)
-            feature_area_index = header.index(config.col_feature_area)
+#            scan_index = header.index(config.col_scan_list)
+#            feature_area_index = header.index(config.col_feature_area)
             predicted_seq_index = header.index(config.col_predicted_seq)
             for line in reader:
                 mass = (float(line[mz_index]) - config.mass_H) * float(line[z_index])
@@ -86,11 +87,33 @@ class DenovoDataset():
                                              z=int(line[z_index]),
                                              rt_mean=float(line[rt_mean_index]),
                                              peptide=peptide,
-                                             scan=line[scan_index],
+#                                             scan=line[scan_index],
+                                             scan=line[feature_id_index],
                                              mass=mass,
-                                             feature_area=line[feature_area_index],
+#                                             feature_area=line[feature_area_index],
                                              predicted_seq=line[predicted_seq_index].split(','))
                 self.feature_list.append(new_feature)
+
+                if random_sequence:
+                    sequence_length = len(peptide)
+                    for i in range(sequence_length):
+                        j = i
+                        while (j < sequence_length and calculate_mass(peptide[i:j + 1]) < config.mass_tol): j += 1
+                        sub = peptide[i:j]
+                        new_sub_list = self.dc.find_subseq(sub)
+                        for new_sub in new_sub_list:
+                            new_sequence = peptide[0:i] + new_sub + peptide[j:]
+                            new_feature = config.DDAFeature(feature_id=line[feature_id_index],
+                                                            mz=float(line[mz_index]),
+                                                            z=int(line[z_index]),
+                                                            rt_mean=float(line[rt_mean_index]),
+                                                            peptide=peptide,
+#                                                            scan=line[scan_index],
+                                                            mass=mass,
+#                                                            feature_area=line[feature_area_index],
+                                                            predicted_seq=new_sequence)
+                            self.feature_list.append(new_feature)
+
         logger.info(f"read {len(self.feature_list)} features, {skipped_by_mass} skipped by mass, "
                     f"{skipped_by_ptm} skipped by unknown modification, {skipped_by_length} skipped by length, "
                     f"{skipped_by_result} skipped by unknown result")

@@ -13,10 +13,10 @@ def parse_raw_sequence(raw_sequence: str):
                 peptide[-1] = 'M(Oxidation)'
                 index += 8
             elif peptide[-1] == 'N' and raw_sequence[index:index + 6] == "(+.98)":
-                peptide[-1] = 'N'
+                peptide[-1] = 'N(Deamidation)'
                 index += 6
             elif peptide[-1] == 'Q' and raw_sequence[index:index + 6] == "(+.98)":
-                peptide[-1] = 'Q'
+                peptide[-1] = 'Q(Deamidation)'
                 index += 6
             else:  # unknown modification
                 print(f"unknown modification in seq {raw_sequence}")
@@ -46,14 +46,14 @@ def parse_denovo_sequence(raw_sequence: str):
             index += 1
     return True, peptide
 
-def _match_AA_novor(target, predicted):
+def _match_AA_novor(_target, _predicted):
     """"""
 
     # ~ print("".join(["="] * 80)) # section-separating line
     # ~ print("WorkerTest._test_AA_match_novor()")
     predicted_result = []
-    predicted = [config.vocab[x] for x in predicted]
-    target = [config.vocab[x] for x in target]
+    predicted = [config.vocab[x] for x in _predicted]
+    target = [config.vocab[x] for x in _target]
     num_match = 0
     target_len = len(target)
     predicted_len = len(predicted)
@@ -61,7 +61,9 @@ def _match_AA_novor(target, predicted):
     target_mass_cum = np.cumsum(target_mass)
     predicted_mass = [config.mass_ID[x] for x in predicted]
     predicted_mass_cum = np.cumsum(predicted_mass)
-
+    if (abs(target_mass_cum[-1]-predicted_mass_cum[-1]) > 0.5):
+        print(_target, _predicted)
+        print(target_mass_cum[-1], predicted_mass_cum[-1], abs(target_mass_cum[-1]-predicted_mass_cum[-1]))
     i = 0
     j = 0
     while i < target_len and j < predicted_len:
@@ -83,6 +85,6 @@ def _match_AA_novor(target, predicted):
     return num_match, predicted_result
 
 if __name__ == '__main__':
-    X =['V', 'E', 'N', 'G', 'N', 'P', 'V', 'K', 'D', 'G', 'K']
-    Y = ['A', 'D', 'I', 'N', 'V', 'P', 'V', 'K', 'D', 'G', 'K']
+    X = ['H', 'K', 'S', 'D', 'F', 'G', 'K']
+    Y = ['W', 'A', 'P', 'N', 'F', 'G', 'K']
     print(_match_AA_novor(X, Y))

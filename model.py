@@ -14,7 +14,7 @@ class Net(torch.nn.Module):
 
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 60, kernel_size=(64,5), padding=(0, 2))
+        self.conv1 = nn.Conv2d(1, 60, kernel_size=(86,5), padding=(0, 2))
         self.conv2 = nn.Conv1d(60, 60, kernel_size=5, padding=2)
         self.conv3 = nn.Conv1d(60, 60, kernel_size=5, padding=2)
         self.fc1 = nn.Linear(60, 1)
