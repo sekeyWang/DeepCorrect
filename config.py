@@ -87,7 +87,7 @@ MAX_LEN = 50 #if args.search_denovo else 30
 
 train_epochs = 12
 splits = 5
-lr = 0.005
+lr = 0.01
 momentum = 0.9
 
 @dataclass
@@ -138,7 +138,7 @@ vocab = dict([(x, y) for (y, x) in enumerate(vocab_reverse)])
 vocab_size = len(vocab_reverse)
 mass_ID = [mass_AA[vocab_reverse[x]] for x in range(vocab_size)]
 
-ppm = 30
+ppm = 20
 mass_tol = 300
 search_iterations = 10
-step_size = 0.1
+step_size = 0.0

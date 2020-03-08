@@ -8,7 +8,7 @@ from LocalSearch import Findsub, calculate_mass
 logger = logging.getLogger(__name__)
 
 class DenovoDataset():
-    def __init__(self, feature_filename, spectrum_filename, random_sequence = False):
+    def __init__(self, feature_filename, spectrum_filename, real_peptide = False):
         """
         read all feature information and store in memory,
         :param feature_filename:
@@ -82,37 +82,46 @@ class DenovoDataset():
 #                    logger.debug(f"{line[seq_index]} skipped by result")
 #                    continue
 #                print(line[feature_id_index], sequence_list[line[feature_id_index]])
-                new_feature = config.DDAFeature(feature_id=line[feature_id_index],
-                                             mz=float(line[mz_index]),
-                                             z=int(line[z_index]),
-                                             rt_mean=float(line[rt_mean_index]),
-                                             peptide=peptide,
-#                                             scan=line[scan_index],
-                                             scan=line[feature_id_index],
-                                             mass=mass,
-#                                             feature_area=line[feature_area_index],
-                                             predicted_seq=line[predicted_seq_index].split(','))
+                if real_peptide:
+                    new_feature = config.DDAFeature(feature_id=line[feature_id_index],
+                                                    mz=float(line[mz_index]),
+                                                    z=int(line[z_index]),
+                                                    rt_mean=float(line[rt_mean_index]),
+                                                    peptide=peptide,
+                                                    scan=line[feature_id_index],
+                                                    mass=mass,
+                                                    predicted_seq=peptide)
+                else:
+                    new_feature = config.DDAFeature(feature_id=line[feature_id_index],
+                                                    mz=float(line[mz_index]),
+                                                    z=int(line[z_index]),
+                                                    rt_mean=float(line[rt_mean_index]),
+                                                    peptide=peptide,
+                                                    #                                             scan=line[scan_index],
+                                                    scan=line[feature_id_index],
+                                                    mass=mass,
+                                                    #                                             feature_area=line[feature_area_index],
+                                                    predicted_seq=line[predicted_seq_index].split(','))
                 self.feature_list.append(new_feature)
-
-                if random_sequence:
-                    sequence_length = len(peptide)
-                    for i in range(sequence_length):
-                        j = i
-                        while (j < sequence_length and calculate_mass(peptide[i:j + 1]) < config.mass_tol): j += 1
-                        sub = peptide[i:j]
-                        new_sub_list = self.dc.find_subseq(sub)
-                        for new_sub in new_sub_list:
-                            new_sequence = peptide[0:i] + new_sub + peptide[j:]
-                            new_feature = config.DDAFeature(feature_id=line[feature_id_index],
-                                                            mz=float(line[mz_index]),
-                                                            z=int(line[z_index]),
-                                                            rt_mean=float(line[rt_mean_index]),
-                                                            peptide=peptide,
-#                                                            scan=line[scan_index],
-                                                            mass=mass,
-#                                                            feature_area=line[feature_area_index],
-                                                            predicted_seq=new_sequence)
-                            self.feature_list.append(new_feature)
+#                if random_sequence:
+#                    sequence_length = len(peptide)
+#                    for i in range(sequence_length):
+#                        j = i
+#                        while (j < sequence_length and calculate_mass(peptide[i:j + 1]) < config.mass_tol): j += 1
+#                        sub = peptide[i:j]
+#                        new_sub_list = self.dc.find_subseq(sub)
+#                        for new_sub in new_sub_list:
+#                            new_sequence = peptide[0:i] + new_sub + peptide[j:]
+#                            new_feature = config.DDAFeature(feature_id=line[feature_id_index],
+#                                                            mz=float(line[mz_index]),
+#                                                            z=int(line[z_index]),
+#                                                            rt_mean=float(line[rt_mean_index]),
+#                                                            peptide=peptide,
+##                                                            scan=line[scan_index],
+#                                                            mass=mass,
+##                                                            feature_area=line[feature_area_index],
+#                                                            predicted_seq=new_sequence)
+#                            self.feature_list.append(new_feature)
 
         logger.info(f"read {len(self.feature_list)} features, {skipped_by_mass} skipped by mass, "
                     f"{skipped_by_ptm} skipped by unknown modification, {skipped_by_length} skipped by length, "

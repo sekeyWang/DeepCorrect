@@ -100,7 +100,7 @@ class DeepCorrect:
 #            print("Larger score: modified:%d, dssearch:%d" % (L, R))
             if (idx > 5000): break
 if __name__ == '__main__':
-    model = build_model("model/model4")
+    model = build_model("model/model3-5")
     deepCorrect = DeepCorrect(model)
     denovodataset = DenovoDataset(config.input_feature_file_test, config.input_spectrum_file_train)
     deepCorrect.test(denovodataset)

@@ -1,0 +1,20 @@
+2020-03-07 21:23:08,092 [INFO] data_reader: input spectrum file: Converters/feature_files/spectrum.mgf
+2020-03-07 21:23:08,092 [INFO] data_reader: input feature file: Converters/training_features/train.csv
+2020-03-07 21:23:08,139 [INFO] data_reader: read cached spectrum locations
+2020-03-07 21:23:08,268 [INFO] data_reader: read 20124 features, 0 skipped by mass, 0 skipped by unknown modification, 0 skipped by length, 0 skipped by unknown result
+2020-03-07 21:23:08,268 [INFO] data_reader: input spectrum file: Converters/feature_files/spectrum.mgf
+2020-03-07 21:23:08,268 [INFO] data_reader: input feature file: Converters/training_features/train.csv
+2020-03-07 21:23:08,284 [INFO] data_reader: read cached spectrum locations
+2020-03-07 21:23:08,444 [INFO] data_reader: read 20124 features, 0 skipped by mass, 0 skipped by unknown modification, 0 skipped by length, 0 skipped by unknown result
+2020-03-07 21:23:08,444 [INFO] data_reader: input spectrum file: Converters/feature_files/spectrum.mgf
+2020-03-07 21:23:08,444 [INFO] data_reader: input feature file: Converters/training_features/valid.csv
+2020-03-07 21:23:08,458 [INFO] data_reader: read cached spectrum locations
+2020-03-07 21:23:08,481 [INFO] data_reader: read 2515 features, 0 skipped by mass, 0 skipped by unknown modification, 0 skipped by length, 0 skipped by unknown result
+2020-03-07 21:23:08,481 [INFO] data_reader: input spectrum file: Converters/feature_files/spectrum.mgf
+2020-03-07 21:23:08,481 [INFO] data_reader: input feature file: Converters/training_features/test.csv
+2020-03-07 21:23:08,496 [INFO] data_reader: read cached spectrum locations
+2020-03-07 21:23:08,518 [INFO] data_reader: read 2515 features, 0 skipped by mass, 0 skipped by unknown modification, 0 skipped by length, 0 skipped by unknown result
+2020-03-07 21:23:18,073 [INFO] train_model: TP=25189, FP=1949, FN=2568, TN=8933
+2020-03-07 21:23:18,074 [INFO] train_model: Accuracy = 0.883(34122/38639)
+2020-03-07 21:23:18,074 [INFO] train_model: Positive Accuracy: 0.907(25189/27757)
+2020-03-07 21:23:18,074 [INFO] train_model: Negative Accuracy: 0.821(8933/10883)

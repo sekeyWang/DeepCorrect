@@ -106,10 +106,20 @@ def find_peaks(feature: config.DenovoData, seq):
 
         re_distance_array[ion].append(distance)
         re_intensity_array[ion].append(intensity)
-
+    for ion in re_distance_array:
+        re_distance_array[ion][-1] = 0
+        re_intensity_array[ion][-1] = 0
     for ion in ion_mass:
         for charge in range(1, 4):
             ion_name = ion + str(charge)
+            re_distance_array[ion_name] = re_distance_array[ion_name][::-1]
+            re_intensity_array[ion_name] = re_intensity_array[ion_name][::-1]
+
+            ion_name = ion + str(charge) + 'H2O'
+            re_distance_array[ion_name] = re_distance_array[ion_name][::-1]
+            re_intensity_array[ion_name] = re_intensity_array[ion_name][::-1]
+
+            ion_name = ion + str(charge) + 'NH3'
             re_distance_array[ion_name] = re_distance_array[ion_name][::-1]
             re_intensity_array[ion_name] = re_intensity_array[ion_name][::-1]
     return re_distance_array, re_intensity_array

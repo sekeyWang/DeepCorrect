@@ -40,8 +40,8 @@ def cross_validation(dataset, model=build_model()):
 
 def train(train_dataset, val_dataset, model) -> Net:
     optimizer = optim.SGD(model.parameters(), lr=config.lr, momentum=config.momentum)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.5)
-    dataloader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=1, shuffle=False)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.5)
+    dataloader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=1, shuffle=True)
     for epoch in range(config.train_epochs):
         start = time.time()
         running_loss = 0
@@ -49,15 +49,17 @@ def train(train_dataset, val_dataset, model) -> Net:
         correct_AA, total_AA = 0, 0
         for i, data in enumerate(dataloader, 0):
             if (i % 5000 == 4999):
-                logger.info('Trained:%d, Total: %d'%(cnt, len(dataloader)))
+                logger.info('Trained:%d, Total: %d'%(i, len(dataloader)))
                 logger.info('Epoch %d/%d loss: %.3f time: %.3f' % (epoch + 1, config.train_epochs, running_loss / cnt, time.time() - start))
+                running_loss = 0
+                cnt = 0
             input, target = data
 #            if (sum(target[0]) > len(target[0]) - 4): continue
             cnt += 1
             correct_AA += sum(target[0])
             total_AA += len(target[0])
             for j in range(len(target[0])):
-                if (target[0][j] == 0): target[0][j] = -0.5
+                if (target[0][j] == 0): target[0][j] = -0.8
             input, target = input.to(device), target.to(device)
             model.zero_grad()
             output = model(input)
@@ -70,7 +72,7 @@ def train(train_dataset, val_dataset, model) -> Net:
         output_list, target_list = test(val_dataset, model)
         analyze_result(output_list, target_list)
 #        analyze_distribution(output_list, target_list)
-        save_model(model, "model/model3-5")
+        save_model(model, "model/model3-7")
     return model
 
 def get_list_score(input_feature, model: Net):
@@ -106,7 +108,7 @@ def analyze_result(output_list, target_list, threshold=50):
     total = total_TP + total_FP + total_FN + total_TN
     logger.info('Accuracy = %.3f(%d/%d)' % ((total_TP+total_TN) / total, total_TP+total_TN, total))
     logger.info('Positive Accuracy: %.3f(%d/%d)' % (total_TP / (total_TP + total_FN), total_TP, (total_TP + total_FN)))
-    logger.info('Negative Accuracy: %.3f(%d/%d)' % (total_TN / (total_TN + total_FP), total_TN, (total_TN + total_FP)))
+    logger.info('Negative Accuracy: %.3f(%d/%d)' % (total_TN / (total_TN + total_FP+1), total_TN, (total_TN + total_FP+1)))
 
 def test_result(output, target, threshold):
     TP, FP, TN, FN = 0, 0, 0, 0
