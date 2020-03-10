@@ -3,15 +3,6 @@ import config
 def calculate_mass(seq):
     return sum([config.mass_AA[x] for x in seq])
 
-def equal_peptide(s1, s2):
-    for idx, _ in enumerate(s1):
-        if s1[idx] == 'I':
-            s1[idx] = 'L'
-    for idx, _ in enumerate(s2):
-        if s2[idx] == 'I':
-            s2[idx] = 'L'
-    return s1 == s2
-
 class Findsub():
     def __init__(self):
         self.all_subseq = self.build_substitute()
@@ -43,5 +34,7 @@ class Findsub():
                     ret.append(res[0])
         return ret
 if __name__ == '__main__':
-    print(calculate_mass(['T','H','M(Oxidation)','T','H','H','A','V','S','D','H','E','A','T','L','R']))
-    print(calculate_mass(['T','M','F','D','E','H','A','V','S','D','H','E','A','T','L','R']))
+#    print(calculate_mass(['T','H','M(Oxidation)','T','H','H','A','V','S','D','H','E','A','T','L','R']))
+#    print(calculate_mass(['T','M','F','D','E','H','A','V','S','D','H','E','A','T','L','R']))
+    find = Findsub()
+    print(find.find_subseq(['T','M','F']))

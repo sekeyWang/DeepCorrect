@@ -10,7 +10,7 @@ input_feature_file_val = "Converters/training_features/valid.csv"
 input_feature_file_test = "Converters/training_features/test.csv"
 
 output_file_test = "Converters/training_features/test_score.csv"
-
+output_file_modify = "Converters/training_features/test_modify.csv"
 mass_H = 1.0078
 mass_H2O = 18.0106
 mass_NH3 = 17.0265
@@ -138,7 +138,7 @@ vocab = dict([(x, y) for (y, x) in enumerate(vocab_reverse)])
 vocab_size = len(vocab_reverse)
 mass_ID = [mass_AA[vocab_reverse[x]] for x in range(vocab_size)]
 
-ppm = 20
+ppm = 10
 mass_tol = 300
 search_iterations = 10
 step_size = 0.0

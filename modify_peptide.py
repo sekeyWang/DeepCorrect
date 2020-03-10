@@ -2,6 +2,7 @@ from construct_model_input import DenovoDataset, construct_input, construct_outp
 from train_model import build_model, get_list_score
 from Converters.parsers import _match_AA_novor
 from LocalSearch import Findsub, calculate_mass
+import pandas as pd
 import config
 
 class DeepCorrect:
@@ -58,29 +59,46 @@ class DeepCorrect:
             oldscore = newscore
         return(oldseq, oldscore)
 
-    def test(self, denovodataset):
+    def test(self, denovodataset, input_file, output_file):
+        df = pd.read_csv(input_file)
+        df["new_seq"] = None
+        df["novor_correct"] = None
+        df["deepnovo_correct"] = None
+        df["modify_correct"] = None
+        df["deepnovo_score"] = None
+        df["modify_score"] = None
+        df["score_measure"] = None
         TT, TF, FT, FF = 0, 0, 0, 0
-        L, R = 0, 0
         AA1, AA2, total_AA1, total_AA2 = 0, 0, 0, 0
         for idx, feature in enumerate(denovodataset):
             S = feature.original_dda_feature.peptide
-            s1 = feature.original_dda_feature.predicted_seq
-            s2, _ = self.modify_sequence(feature)
+            s_novor = feature.original_dda_feature.predicted_seq
+            s_deepnovo = df["deepnovo_seq"][idx].split(',')
+            s_modify, _ = self.modify_sequence(feature)
+            df["new_seq"][idx] = ",".join(s_modify)
 
-            num_match1, predicted_result1 = _match_AA_novor(S, s1)
-            num_match2, predicted_result2 = _match_AA_novor(S, s2)
-            correct1, correct2 = 0, 0
+            num_match1, predicted_result1 = _match_AA_novor(S, s_novor)
+            num_match2, predicted_result2 = _match_AA_novor(S, s_deepnovo)
+            num_match3, predicted_result3 = _match_AA_novor(S, s_modify)
+            correct1, correct2, correct3 = 0, 0, 0
+
             if num_match1 == len(predicted_result1): correct1 = 1
             if num_match2 == len(predicted_result2): correct2 = 1
+            if num_match3 == len(predicted_result3): correct3 = 1
+            df["novor_correct"][idx],df["deepnovo_correct"][idx],df["modify_correct"][idx] = correct1, correct2, correct3
+            AA_score_list, seq_score = self.sequence_score(feature, [s_deepnovo, s_modify])
+            df["deepnovo_score"][idx], df["modify_score"][idx] = seq_score[0], seq_score[1]
+            if correct2 == 1 and correct3 == 0:
+                df["score_measure"][idx] = seq_score[0] > seq_score[1]
             AA1 += num_match1
-            AA2 += num_match2
+            AA2 += num_match3
             total_AA1 += len(predicted_result1)
-            total_AA2 += len(predicted_result2)
+            total_AA2 += len(predicted_result3)
             if correct1 == 1:
-                if correct1 == correct2: TT += 1
+                if correct1 == correct3: TT += 1
                 else: TF += 1
             else:
-                if correct1 == correct2: FF += 1
+                if correct1 == correct3: FF += 1
                 else: FT += 1
 #            if correct2 == 0:
 #                AA_score_list, seq_score = self.sequence_score(feature, [s1, s2, S])
@@ -98,9 +116,10 @@ class DeepCorrect:
             print("Sequence Accuracy %.2f%% -> %.2f%%" % ((TT + TF)*100 / (idx + 1), (TT + FT)*100 / (idx + 1)))
             print("AA Accuracy %.2f%% -> %.2f%%" %(AA1*100 / total_AA1, AA2*100 / total_AA2))
 #            print("Larger score: modified:%d, dssearch:%d" % (L, R))
-            if (idx > 5000): break
+            if (idx > 1000): break
+        df.to_csv(output_file)
 if __name__ == '__main__':
-    model = build_model("model/model3-5")
+    model = build_model("model/model3-6")
     deepCorrect = DeepCorrect(model)
     denovodataset = DenovoDataset(config.input_feature_file_test, config.input_spectrum_file_train)
-    deepCorrect.test(denovodataset)
+    deepCorrect.test(denovodataset, config.input_feature_file_test, config.output_file_modify)
