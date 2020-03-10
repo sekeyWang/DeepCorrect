@@ -13,10 +13,10 @@ def main():
     val_dataset = TrainDataset(DenovoDataset(config.input_feature_file_val, config.input_spectrum_file_train))
     test_dataset = TrainDataset(DenovoDataset(config.input_feature_file_test, config.input_spectrum_file_train))
 
-#    model = train(train_dataset=train_dataset, val_dataset=val_dataset, model=build_model())
+    model = train(train_dataset=train_dataset, val_dataset=val_dataset, model=build_model())
 
-    output_list, target_list = test(test_dataset, build_model("model/model3-6"))
-    analyze_result(output_list, target_list)
+    # output_list, target_list = test(test_dataset, build_model("model/model3-6"))
+    # analyze_result(output_list, target_list)
 #    output_score(config.input_feature_file_test, config.output_file_test, output_list, target_list)
 #    analyze_distribution(output_list, target_list)
 #    analyze_threshold(output_list, target_list)

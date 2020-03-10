@@ -5,6 +5,8 @@ import logging
 import config
 import csv
 from LocalSearch import Findsub, calculate_mass
+import torch
+import torch.nn.functional as F
 logger = logging.getLogger(__name__)
 
 class DenovoDataset():
@@ -178,4 +180,84 @@ class DenovoDataset():
         return config.DenovoData(mz_list=mz_list,
                           intensity_list=intensity_list,
                           original_dda_feature=feature)
+
+
+class train_Collate:
+    """
+    a variant of callate_fn that pads according to the longest sequence in
+    a batch of sequences
+    """
+
+    def __init__(self):
+        pass
+
+    def _collate(self, batch):
+        """
+        args:
+            batch - list of (tensor, label)
+            tensor shape: (batch, 1, width, length)
+            label shape: (batch, length)
+
+        reutrn:
+        """
+        xs = [torch.FloatTensor(v[0]) for v in batch]
+        ys = [torch.LongTensor(v[1]) for v in batch]
+        # 获得每个样本的序列长度
+        x_seq_lengths = torch.LongTensor([v.size(2) for v in xs])
+        x_max_len = max(x_seq_lengths).item()
+        # 每个样本都padding到当前batch的最大长度
+        # xs = torch.FloatTensor([pad_tensor(v, max_len) for v in xs])
+        xs_pad = torch.FloatTensor([F.pad(v, (0, x_max_len - v.size(2)), 'constant', 0).numpy() for v in
+                                    xs]).double()  # feature padding with value 0
+
+        y_seq_lengths = torch.LongTensor([v.size(0) for v in ys])
+        y_max_len = max(y_seq_lengths).item()
+        ys_pad = torch.LongTensor(
+            [F.pad(v, (0, y_max_len - v.size(0)), 'constant', 2).numpy() for v in ys])  # label padding with value 2
+
+        # 把xs和ys按照序列长度从大到小排序
+        x_seq_lengths, perm_idx = x_seq_lengths.sort(0, descending=True)
+        xs_pad = xs_pad[perm_idx]
+        ys_pad = ys_pad[perm_idx]
+        y_seq_lengths = y_seq_lengths[perm_idx]
+        return xs_pad, x_seq_lengths, ys_pad, y_seq_lengths
+
+    def __call__(self, batch):
+        return self._collate(batch)
+
+
+class test_Collate:
+    """
+    a variant of callate_fn that pads according to the longest sequence in
+    a batch of sequences
+    """
+
+    def __init__(self):
+        pass
+
+    def _collate(self, batch):
+        """
+        args:
+            batch - list of (tensor, label)
+            tensor shape: (batch, 1, width, length)
+
+        reutrn:
+        """
+        xs = [torch.FloatTensor(v[0]) for v in batch]
+        ys = [torch.LongTensor(v[1]) for v in batch]
+        # 获得每个样本的序列长度
+        x_seq_lengths = torch.LongTensor([v.size(2) for v in xs])
+        x_max_len = max(x_seq_lengths).item()
+        # 每个样本都padding到当前batch的最大长度
+        # xs = torch.FloatTensor([pad_tensor(v, max_len) for v in xs])
+        xs_pad = torch.FloatTensor([F.pad(v, (0, x_max_len - v.size(2)), 'constant', 0).numpy() for v in
+                                    xs]).double()  # feature padding with value 0
+
+        # 把xs和ys按照序列长度从大到小排序
+        x_seq_lengths, perm_idx = x_seq_lengths.sort(0, descending=True)
+        xs_pad = xs_pad[perm_idx]
+        return xs_pad, x_seq_lengths
+
+    def __call__(self, batch):
+        return self._collate(batch)
 

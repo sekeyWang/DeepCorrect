@@ -41,16 +41,19 @@ class Net(torch.nn.Module):
         self.conv2 = nn.Conv1d(60, 60, kernel_size=5, padding=2)
         self.conv3 = nn.Conv1d(60, 60, kernel_size=5, padding=2)
         self.conv4 = nn.Conv1d(60, 60, kernel_size=5, padding=2)
-        self.fc1 = nn.Linear(60, 1)
+        self.fc1 = nn.Linear(60, 2)
         self.double().to(device)
 
     def forward(self, x):
+        N = x.size(0)
         x = F.relu(self.conv1(x))
-        x = x.view(1, 60, -1)
+        x = x.view(N, 60, -1)
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
         x = F.relu(self.conv4(x))
-        x = x.view(60, -1).T
+        x = x.transpose(1, 2).contiguous()
+        # x = x.view(60, -1).T
         x = self.fc1(x)
-        x = torch.sigmoid(x)
-        return x.view(1, -1)
+        # x = torch.sigmoid(x)
+        # return x.view(1, -1)
+        return x.view(-1, 2)

@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 import torch.optim as optim
 import torch.nn as nn
 import time
@@ -9,6 +10,7 @@ from model import Net, device
 from analysing_scripts import draw_single, draw_double, draw_triple
 import numpy as np
 from scipy.stats import pearsonr
+from data_reader import train_Collate, test_Collate
 
 import logging
 logger = logging.getLogger(__name__)
@@ -21,6 +23,7 @@ class myMSEloss(torch.nn.Module):
         return torch.mean(torch.pow((x - y), 2))
 
 criterion = nn.MSELoss()
+criterion = nn.CrossEntropyLoss(ignore_index=2)   # input (N,C) terget (N)
 
 def build_model(load_net_name=False):
     net = Net()
@@ -41,7 +44,10 @@ def cross_validation(dataset, model=build_model()):
 def train(train_dataset, val_dataset, model) -> Net:
     optimizer = optim.SGD(model.parameters(), lr=config.lr, momentum=config.momentum)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.5)
-    dataloader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=1, shuffle=True)
+    #optimizer = optim.Adam(model.parameters(), lr=config.lr)
+    # dataloader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=1, shuffle=True)
+    dataloader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=1, shuffle=True,
+                                             collate_fn=train_Collate(), num_workers=10)
     for epoch in range(config.train_epochs):
         start = time.time()
         running_loss = 0
@@ -53,7 +59,8 @@ def train(train_dataset, val_dataset, model) -> Net:
                 logger.info('Epoch %d/%d loss: %.3f time: %.3f' % (epoch + 1, config.train_epochs, running_loss / cnt, time.time() - start))
                 running_loss = 0
                 cnt = 0
-            input, target = data
+            # input, target = data
+            input, input_lengths, target, target_lengths = data
 #            if (sum(target[0]) > len(target[0]) - 4): continue
             cnt += 1
             correct_AA += sum(target[0])
@@ -63,7 +70,9 @@ def train(train_dataset, val_dataset, model) -> Net:
             input, target = input.to(device), target.to(device)
             model.zero_grad()
             output = model(input)
-            loss = criterion(output, target)
+            new_target = target.view(-1).long()  # (batch*length)
+            # loss = criterion(output, target)
+            loss = criterion(output, new_target)
             running_loss += loss.item()
             loss.backward()
             optimizer.step()
@@ -72,7 +81,7 @@ def train(train_dataset, val_dataset, model) -> Net:
         output_list, target_list = test(val_dataset, model)
         analyze_result(output_list, target_list)
 #        analyze_distribution(output_list, target_list)
-        save_model(model, "model/model3-7")
+        save_model(model, "model/test3-7")
     return model
 
 def get_list_score(input_feature, model: Net):
@@ -82,24 +91,29 @@ def get_list_score(input_feature, model: Net):
     return output
 
 def test(dataset, model:Net):
-    dataloader = torch.utils.data.DataLoader(dataset=dataset, batch_size=1, shuffle=False)
+    dataloader = torch.utils.data.DataLoader(dataset=dataset, batch_size=1, shuffle=False,collate_fn=train_Collate(),num_workers=10)
     output_list, target_list = [], []
     for i, data in enumerate(dataloader, 0):
-        input, target = data
+        # input, target = data
+        input, input_lengths, target, target_lengths = data  # (batch,1,width,length), (batch,length)
         input, target = input.to(device), target.to(device)
         output = model(input)
+        new_target = target.view(-1).long()
 #        if (sum(target[0]) > len(target[0])-6): continue
         output_list.append(output)
-        target_list.append(target)
+        # target_list.append(target)
+        target_list.append(new_target)
 #        if (i > 200): break
     return output_list, target_list
 
-def analyze_result(output_list, target_list, threshold=50):
+def analyze_result(output_list,target_list):
     total_TP, total_FP, total_FN, total_TN = 0, 0, 0, 0
     for idx in range(len(output_list)):
-        output = output_list[idx]
-        target = target_list[idx]
-        TP, FP, TN, FN = test_result(output[0], target[0], threshold/100)
+        output = output_list[idx]   # (L,2)
+        target = target_list[idx]   # (L,)
+
+        output = torch.argmax(output,dim=1) # (L)
+        TP, FP, TN, FN = test_result(output, target)
         total_TP, total_FP, total_TN, total_FN = total_TP + TP, total_FP + FP, total_TN + TN, total_FN + FN
     logger.info('TP=%d, FP=%d, FN=%d, TN=%d'%(total_TP, total_FP, total_FN, total_TN))
 #    logger.info('Precision = %.3f(%d/%d)' % (total_TP / (total_TP + total_FP), total_TP, (total_TP + total_FP)))
@@ -108,16 +122,13 @@ def analyze_result(output_list, target_list, threshold=50):
     total = total_TP + total_FP + total_FN + total_TN
     logger.info('Accuracy = %.3f(%d/%d)' % ((total_TP+total_TN) / total, total_TP+total_TN, total))
     logger.info('Positive Accuracy: %.3f(%d/%d)' % (total_TP / (total_TP + total_FN), total_TP, (total_TP + total_FN)))
-    logger.info('Negative Accuracy: %.3f(%d/%d)' % (total_TN / (total_TN + total_FP+1), total_TN, (total_TN + total_FP+1)))
+    logger.info('Negative Accuracy: %.3f(%d/%d)' % (total_TN / (total_TN + total_FP), total_TN, (total_TN + total_FP)))
 
-def test_result(output, target, threshold):
+
+def test_result(output, target):
     TP, FP, TN, FN = 0, 0, 0, 0
     for idx in range(len(target)):
-        if (output[idx] >= threshold):
-            p = 1
-        else:
-            p = 0
-
+        p = output[idx]
         if target[idx] == 1:
             if p == 1:
                 TP += 1
@@ -129,6 +140,42 @@ def test_result(output, target, threshold):
             else:
                 TN += 1
     return TP, FP, TN, FN
+
+# def analyze_result(output_list, target_list, threshold=50):
+#     total_TP, total_FP, total_FN, total_TN = 0, 0, 0, 0
+#     for idx in range(len(output_list)):
+#         output = output_list[idx]
+#         target = target_list[idx]
+#         TP, FP, TN, FN = test_result(output[0], target[0], threshold/100)
+#         total_TP, total_FP, total_TN, total_FN = total_TP + TP, total_FP + FP, total_TN + TN, total_FN + FN
+#     logger.info('TP=%d, FP=%d, FN=%d, TN=%d'%(total_TP, total_FP, total_FN, total_TN))
+# #    logger.info('Precision = %.3f(%d/%d)' % (total_TP / (total_TP + total_FP), total_TP, (total_TP + total_FP)))
+# #    logger.info('Recall = %.3f(%d/%d)' % (total_TP / (total_TP + total_FN), total_TP, (total_TP + total_FN)))
+#
+#     total = total_TP + total_FP + total_FN + total_TN
+#     logger.info('Accuracy = %.3f(%d/%d)' % ((total_TP+total_TN) / total, total_TP+total_TN, total))
+#     logger.info('Positive Accuracy: %.3f(%d/%d)' % (total_TP / (total_TP + total_FN), total_TP, (total_TP + total_FN)))
+#     logger.info('Negative Accuracy: %.3f(%d/%d)' % (total_TN / (total_TN + total_FP+1), total_TN, (total_TN + total_FP+1)))
+#
+# def test_result(output, target, threshold):
+#     TP, FP, TN, FN = 0, 0, 0, 0
+#     for idx in range(len(target)):
+#         if (output[idx] >= threshold):
+#             p = 1
+#         else:
+#             p = 0
+#
+#         if target[idx] == 1:
+#             if p == 1:
+#                 TP += 1
+#             else:
+#                 FN += 1
+#         else:
+#             if p == 1:
+#                 FP += 1
+#             else:
+#                 TN += 1
+#     return TP, FP, TN, FN
 
 def analyze_threshold(output_list,target_list):
     y1, y2, y3 = [], [], []
