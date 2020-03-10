@@ -87,7 +87,7 @@ MAX_LEN = 50 #if args.search_denovo else 30
 
 train_epochs = 12
 splits = 5
-lr = 0.01
+lr = 0.001
 momentum = 0.9
 
 @dataclass
